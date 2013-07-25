@@ -1,6 +1,7 @@
 import logging
 import os.path
 import tempfile
+import shutil
 from zope.interface import implementer
 from transaction.interfaces import IDataManager
 
@@ -30,7 +31,7 @@ class FileSafeDataManager:
                 raise ValueError("%s is already taken", path)
         try:
             file = tempfile.NamedTemporaryFile(mode=mode, dir=self.tempdir,
-                    delete=False)
+                                               delete=False)
         except TypeError:
             # Python pre-2.6 does not support the delete option, so play
             # some tricks to prevent our file from disappearing.
@@ -45,7 +46,7 @@ class FileSafeDataManager:
             info = self.vault[path]
             if info.get('deleted', False):
                 raise IOError(
-                        "[Errno 2] No such file or directory: '%s'" % path)
+                    "[Errno 2] No such file or directory: '%s'" % path)
             return open(info["tempfile"], mode)
         else:
             return open(path, mode)
@@ -55,7 +56,7 @@ class FileSafeDataManager:
             info = self.vault[path]
             if info.get('deleted', False):
                 raise OSError(
-                        "[Errno 2] No such file or directory: '%s'" % path)
+                    "[Errno 2] No such file or directory: '%s'" % path)
             try:
                 os.unlink(info["tempfile"])
             except OSError:
@@ -67,7 +68,7 @@ class FileSafeDataManager:
         else:
             if not os.path.exists(path):
                 raise OSError(
-                        "[Errno 2] No such file or directory: '%s'" % path)
+                    "[Errno 2] No such file or directory: '%s'" % path)
             self.vault[path] = dict(tempfile=path, deleted=True)
 
     def tpc_begin(self, transaction):
@@ -78,7 +79,7 @@ class FileSafeDataManager:
         for target in self.vault:
             info = self.vault[target]
             if info.get("deleted", False):
-                os.rename(target, "%s.filesafe" % target)
+                shutil.move(target, "%s.filesafe" % target)
                 info["has_original"] = True
                 info["moved"] = True
             else:
@@ -87,7 +88,7 @@ class FileSafeDataManager:
                     os.link(target, "%s.filesafe" % target)
                 else:
                     info["has_original"] = False
-                os.rename(info["tempfile"], target)
+                shutil.move(info["tempfile"], target)
                 info["moved"] = True
 
     def tpc_vote(self, transaction):
@@ -124,7 +125,7 @@ class FileSafeDataManager:
             if info.get("moved"):
                 try:
                     if info["has_original"]:
-                        os.rename("%s.filesafe" % target, target)
+                        shutil.move("%s.filesafe" % target, target)
                     else:
                         os.unlink(target)
                 except OSError:

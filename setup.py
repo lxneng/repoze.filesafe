@@ -7,7 +7,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 version = '2.0b2'
 
-setup(name='repoze.filesafe',
+setup(name='repoze.filesafe-nfs',
       version=version,
       description='Transaction-aware file creation',
       long_description=README + "\n\n" + CHANGES,
