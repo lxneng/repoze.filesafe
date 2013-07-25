@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0b2 (2013-07-25)
+2.0b3 (2013-07-25)
 ------------------
 
 - support create file on NFS
